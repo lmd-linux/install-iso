@@ -23,7 +23,7 @@ jobs:
       - name: Make ISO writable
         run: chmod -R +w iso
       - name: Cleanup ISO
-        run: rm -rf iso/pics iso/install.amd/gtk iso/install/amd/xen iso/isolinux/*.cfg iso/isolinux/f*.txt
+        run: rm -rf iso/pics iso/install.amd/gtk iso/install.amd/xen iso/isolinux/*.cfg iso/isolinux/f*.txt
       - name: Add changes to ISO
         run: cp -rf iso-changes/* iso
       - name: Repack ISO
@@ -31,5 +31,25 @@ jobs:
       - name: Upload new ISO
         uses: actions/upload-artifact@v4
         with:
-          name: lmd-amd64-install.iso
+          name: lmd-amd64.iso
           path: lmd-amd64.iso
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: New lmd install ISO image
+          draft: false
+          prerelease: false
+      - name: Upload ISO
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: lmd-amd64.iso
+          asset_name: lmd-amd64.iso
+          asset_content_type: application/octet-stream
