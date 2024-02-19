@@ -1,0 +1,35 @@
+name: Build lmd ISO
+run-name: ${{ github.actor }} builds a new lmd ISO
+on:
+  push:
+    tags:
+      - '*'
+    #schedule:
+    #- cron: '34 5 * * 2'
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Ubuntu packages
+        uses: ConorMacBride/install-package@v1.1.0
+        with:
+          apt: curl isolinux xorriso
+      - name: Download Debian testing ISO
+        run: curl -X GET -OL https://cdimage.debian.org/cdimage/weekly-builds/amd64/iso-cd/debian-testing-amd64-netinst.iso
+      - name: Extract ISO
+        run: xorriso -osirrox on -indev "debian-testing-amd64-netinst.iso" -extract / iso
+      - name: Make ISO writable
+        run: chmod -R +w iso
+      - name: Cleanup ISO
+        run: rm -rf iso/pics iso/install.amd/gtk iso/install/amd/xen iso/isolinux/*.cfg iso/isolinux/f*.txt
+      - name: Add changes to ISO
+        run: cp -rf iso-changes/* iso
+      - name: Repack ISO
+        run: xorriso -as mkisofs -r -V lmd-amd64 -o lmd-amd64.iso -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot -isohybrid-gpt-basdat -isohybrid-apm-hfsplus -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin iso/boot iso
+      - name: Upload new ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: lmd-amd64-install.iso
+          path: lmd-amd64.iso
