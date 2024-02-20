@@ -10,6 +10,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Install Ubuntu packages
         uses: ConorMacBride/install-package@v1.1.0
         with:
@@ -26,23 +27,9 @@ jobs:
         run: cp -rf iso-changes/* iso
       - name: Repack ISO
         run: xorriso -as mkisofs -r -V lmd-amd64 -o lmd-amd64.iso -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot -isohybrid-gpt-basdat -isohybrid-apm-hfsplus -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin iso/boot iso
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload new ISO
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: New lmd install ISO image
-          draft: false
-          prerelease: false
-      - name: Upload ISO
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: lmd-amd64.iso
-          asset_name: lmd-amd64.iso
-          asset_content_type: application/octet-stream
+          name: lmd-amd64.iso
+          path: lmd-amd64.iso
